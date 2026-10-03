@@ -2,60 +2,72 @@ import { useState } from 'react'
 import { PageHeader } from '../../components/Breadcrumbs'
 import { useToast } from '../../components/Toast'
 import { useDemo } from '../../context/DemoContext'
-import { bidderAccount } from '../../data/mock'
+import { officer } from '../../data/mock'
 
-const TABS = ['Company information', 'Representative', 'Notifications', 'Security']
+const TABS = ['Profile', 'Organization', 'Notifications', 'Verification Preferences']
 
-export default function BidderSettings() {
+function Toggle({ label, hint, defaultChecked }) {
+  return (
+    <label className="row-between" style={{ padding: '12px 0', borderBottom: '1px solid var(--line)' }}>
+      <span><span className="strong">{label}</span>{hint && <span className="small muted" style={{ display: 'block' }}>{hint}</span>}</span>
+      <input type="checkbox" defaultChecked={defaultChecked} style={{ width: 18, height: 18, accentColor: 'var(--blue)' }} />
+    </label>
+  )
+}
+
+export default function OfficerSettings() {
   const [tab, setTab] = useState(TABS[0])
   const toast = useToast()
   const { dispatch } = useDemo()
-  const a = bidderAccount
-  const save = (e) => { e.preventDefault(); toast(`${tab} saved`) }
+  const save = (e) => { e.preventDefault(); toast(`${tab} settings saved`) }
 
   return (
     <>
-      <PageHeader crumbs={[{ label: 'Dashboard', to: '/bidder/dashboard' }, { label: 'Settings' }]} title="Settings" />
+      <PageHeader crumbs={[{ label: 'Dashboard', to: '/officer/dashboard' }, { label: 'Settings' }]} title="Settings" />
       <div className="tabs" role="tablist">
         {TABS.map((t) => <button key={t} type="button" role="tab" aria-selected={tab === t} className={`tab${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>{t}</button>)}
       </div>
       <form className="card" style={{ maxWidth: 820 }} onSubmit={save}>
         <div className="card-body">
-          {tab === 'Company information' && (
+          {tab === 'Profile' && (
             <div className="form-grid">
-              <div className="field span-2"><label htmlFor="c">Company name</label><input id="c" className="input" defaultValue={a.company} readOnly /><span className="hint">Legal name comes from your GST registration.</span></div>
-              <div className="field span-2"><label htmlFor="ad">Correspondence address</label><input id="ad" className="input" defaultValue={a.address} /></div>
-              <div className="field"><label htmlFor="g">GSTIN</label><input id="g" className="input mono" defaultValue={a.gstin} readOnly /></div>
-              <div className="field"><label htmlFor="p">PAN</label><input id="p" className="input mono" defaultValue={a.pan} readOnly /></div>
+              <div className="field"><label htmlFor="n">Full name</label><input id="n" className="input" defaultValue={officer.name} /></div>
+              <div className="field"><label htmlFor="d">Designation</label><input id="d" className="input" defaultValue={officer.designation} /></div>
+              <div className="field"><label htmlFor="e">Official email</label><input id="e" className="input" defaultValue={officer.email} readOnly /></div>
+              <div className="field"><label htmlFor="i">Officer ID</label><input id="i" className="input mono" defaultValue={officer.employeeId} readOnly /></div>
             </div>
           )}
-          {tab === 'Representative' && (
-            <div className="form-grid">
-              <div className="field"><label htmlFor="r">Name</label><input id="r" className="input" defaultValue={a.representative} /></div>
-              <div className="field"><label htmlFor="d">Designation</label><input id="d" className="input" defaultValue={a.designation} /></div>
-              <div className="field"><label htmlFor="e">Email</label><input id="e" className="input" defaultValue={a.email} /></div>
-              <div className="field"><label htmlFor="ph">Phone</label><input id="ph" className="input" defaultValue={a.phone} /></div>
+          {tab === 'Organization' && (
+            <div className="kv">
+              <div className="k">Organization</div><div className="v">{officer.organization}</div>
+              <div className="k">Department</div><div className="v">{officer.department}</div>
+              <div className="k">Verification</div><div className="v">Verified by nodal officer, 12 Apr 2026</div>
+              <div className="k">Procurement access</div><div className="v">Tender creation, bid evaluation, final decision</div>
             </div>
           )}
           {tab === 'Notifications' && (
-            <div className="stack" style={{ gap: 12 }}>
-              {['New tenders in my categories', 'Verification status changes', 'Clarification requests (always on)', 'Deadline reminders 48 hours before closing'].map((l, i) => (
-                <label key={l} className="check"><input type="checkbox" defaultChecked={i !== 3} disabled={i === 2} />{l}</label>
-              ))}
-            </div>
+            <>
+              <Toggle label="Assessment ready" hint="When a bid’s compliance assessment is generated" defaultChecked />
+              <Toggle label="Requirement flagged for review" defaultChecked />
+              <Toggle label="Bidder responds to clarification" defaultChecked />
+              <Toggle label="Daily summary email" hint="Sent at 09:00" />
+            </>
           )}
-          {tab === 'Security' && (
-            <div className="form-grid">
-              <div className="field"><label htmlFor="cp">Current password</label><input id="cp" type="password" className="input" autoComplete="current-password" /></div>
-              <div className="field" />
-              <div className="field"><label htmlFor="np">New password</label><input id="np" type="password" className="input" autoComplete="new-password" /><span className="hint">At least 12 characters.</span></div>
-              <div className="field"><label htmlFor="mf">Two-factor authentication</label><select id="mf" className="select" defaultValue="on"><option value="on">Authenticator app (on)</option><option value="off">Off</option></select></div>
-            </div>
+          {tab === 'Verification Preferences' && (
+            <>
+              <Toggle label="Re-verify sources before final decision" hint="Refresh GST and debarment status if older than 24 hours" defaultChecked />
+              <Toggle label="Flag name mismatches across documents" defaultChecked />
+              <Toggle label="Require comment for every decision" hint="Comments are always required for rejection and clarification" />
+              <div className="field mt-16" style={{ maxWidth: 320 }}>
+                <label htmlFor="th">Review threshold</label>
+                <select id="th" className="select" defaultValue="0.80"><option value="0.70">Flag below 70% confidence</option><option value="0.80">Flag below 80% confidence</option><option value="0.90">Flag below 90% confidence</option></select>
+              </div>
+            </>
           )}
         </div>
         <div className="card-footer row-between">
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => { dispatch({ type: 'reset' }); toast('Demo data reset', 'info') }}>Reset demo data</button>
-          <button type="submit" className="btn btn-primary">Save changes</button>
+          {tab !== 'Organization' && <button type="submit" className="btn btn-primary">Save changes</button>}
         </div>
       </form>
     </>
